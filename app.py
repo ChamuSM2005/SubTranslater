@@ -70,7 +70,7 @@ if uploaded_file is not None:
     if st.button("🚀 Translate කිරීම අරඹන්න"):
         genai.configure(api_key=api_key)
         # පාවිච්චි කරන මොඩල් එක
-        model = genai.GenerativeModel('gemini-1.5-flash', safety_settings=safety_settings)
+        model = genai.GenerativeModel('gemini-2.5-flash', safety_settings=safety_settings)
         
         chunks = split_srt_into_chunks(content, chunk_size=chunk_size)
         total_chunks = len(chunks)
