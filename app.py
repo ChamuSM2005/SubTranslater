@@ -9,9 +9,13 @@ st.set_page_config(page_title="Sinhala Natural Subtitler", page_icon="🎬", lay
 st.title("🎬 Sinhala Natural Subtitle Translator")
 st.markdown("ස්වභාවික කතාකරන භාෂාවෙන් (Raw/Street tone) සබ්ටයිටල් ට්‍රාන්ස්ලේට් කරමු!")
 
-# --- API Key එක ලබාගැනීම ---
-api_key = st.text_input("ඔබේ Google Gemini API Key එක මෙතන දෙන්න:", type="password")
-st.markdown("[නොමිලේ API Key එකක් ගන්න මෙතනින් යන්න](https://aistudio.google.com/app/apikey)")
+# --- API Key එක ලබාගැනීම (Streamlit Secrets හරහා) ---
+# මෙතන කෝඩ් එකේ කොහේවත් API Key එක නෑ. ඒක එන්නේ සර්වර් එකේ Settings වලින්.
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+except KeyError:
+    st.error("API Key එක සර්වර් එකේ සේව් කරලා නෑ! කරුණාකර Streamlit Secrets වල GEMINI_API_KEY එක ඇතුලත් කරන්න.")
+    st.stop()
 
 # --- Safety Settings (කුණුහරුප filter වීම නැවැත්වීමට) ---
 safety_settings =[
@@ -27,9 +31,12 @@ You are a professional movie subtitler. Translate the following English SRT subt
 
 Guidelines:
 1. Keep the exact timestamps and index numbers. Do not change or remove any timing.
-2. Tone: Use informal/street language (e.g., use 'උඹ', 'බං', 'තෝ', 'පලයන්', 'වරෙන්' where appropriate).
-3. Raw Language: Do not censor or soften bad words or slang. Translate them with equivalent Sinhala swear words/slang used in real life.
-4. Flow: The translation should sound like a real Sri Lankan person talking.
+2. Tone & Context: Adapt the words dynamically based on the relationship and emotion of the characters.
+   - Polite/Respectful: Use 'ඔයා', 'එන්න', 'යන්න' (for strangers, formal talk, or romance)
+   - Casual/Friendly: Use 'උඹ', 'මචං', 'බං', 'වරෙන්', 'පලයන්' (for friends)
+   - Angry/Aggressive: Use 'තෝ', 'මූ' (for enemies or anger)
+3. Raw Language & Profanity: Do NOT censor, soften, or skip any bad words, slang, or profanity. Translate English swear words (e.g., fuck, motherfucker, shit, bitch) directly into extreme, real-life Sinhala swear words (e.g., 'හුත්තා', 'හුකහන්', 'පකයා', 'වේසි', 'කැරියා'). Do not hold back; adapt to the exact intensity of the English word.
+4. Flow: The translation must sound 100% natural, like a real Sri Lankan speaking on the street, not a dictionary.
 5. IMPORTANT: Output ONLY the translated SRT text. Do not add any introductory words, notes, or markdown formatting (like ```srt). Just the raw SRT text.
 
 Here is the subtitle chunk to translate:
@@ -37,7 +44,6 @@ Here is the subtitle chunk to translate:
 
 def split_srt_into_chunks(srt_text, chunk_size=30):
     """SRT ෆයිල් එකේ පේළි 30 ගානේ chunks වලට කඩන ෆන්ක්ශන් එක"""
-    # Windows/Linux line endings හදාගැනීම
     srt_text = srt_text.replace("\r\n", "\n")
     blocks = re.split(r'\n\n+', srt_text.strip())
     
@@ -55,7 +61,7 @@ def clean_ai_response(text):
 # --- File Uploader ---
 uploaded_file = st.file_uploader("ඔබේ ඉංග්‍රීසි .srt ෆයිල් එක අප්ලෝඩ් කරන්න", type=["srt"])
 
-if uploaded_file is not None and api_key:
+if uploaded_file is not None:
     # ෆයිල් එක කියවීම
     content = uploaded_file.read().decode("utf-8")
     
@@ -122,5 +128,3 @@ if uploaded_file is not None and api_key:
             file_name=new_filename,
             mime="text/plain"
         )
-elif uploaded_file is not None and not api_key:
-    st.warning("කරුණාකර API Key එක ඇතුලත් කරන්න.")
